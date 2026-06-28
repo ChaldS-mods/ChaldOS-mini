@@ -57,5 +57,23 @@ dd if=/dev/urandom of=/var/lib/random-seed bs=512 count=1 2>/dev/null || true
 # Start system logger
 syslogd 2>/dev/null || true
 
+# Start udev for device management (needed by Wayland/libinput)
+if command -v udevd &>/dev/null && command -v udevadm &>/dev/null; then
+    # Start udev daemon
+    udevd -d 2>/dev/null || true
+    # Trigger events for already-connected devices
+    udevadm trigger --type=subsystems --action=add 2>/dev/null || true
+    udevadm trigger --type=devices --action=add 2>/dev/null || true
+    # Wait for initial device processing
+    udevadm settle -t 3 2>/dev/null || true
+    echo "[ChaldOS] udev started"
+fi
+
+# Load desktop mode configuration
+if [ -f /etc/chaldos/de.conf ]; then
+    . /etc/chaldos/de.conf 2>/dev/null
+    echo "[ChaldOS] Desktop mode: ${CHALDOS_DE:-console}"
+fi
+
 echo "[ChaldOS] System ready."
 echo "[ChaldOS] Welcome to ChaldOS! Type 'help' for commands."

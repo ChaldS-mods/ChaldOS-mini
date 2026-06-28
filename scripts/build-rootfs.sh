@@ -76,6 +76,7 @@ create_directory_structure() {
         "${ROOTFS_DIR}/sys"
         "${ROOTFS_DIR}/tmp"
         "${ROOTFS_DIR}/run"
+        "${ROOTFS_DIR}/run/user/0"
         "${ROOTFS_DIR}/var/log"
         "${ROOTFS_DIR}/var/lock"
         "${ROOTFS_DIR}/var/run"
@@ -92,11 +93,14 @@ create_directory_structure() {
         "${ROOTFS_DIR}/etc/default"
         "${ROOTFS_DIR}/etc/ssl"
         "${ROOTFS_DIR}/etc/cron"
+        "${ROOTFS_DIR}/etc/chaldos"
+        "${ROOTFS_DIR}/etc/xdg/weston"
         "${ROOTFS_DIR}/home"
         "${ROOTFS_DIR}/root"
         "${ROOTFS_DIR}/mnt"
         "${ROOTFS_DIR}/opt"
         "${ROOTFS_DIR}/srv"
+        "${ROOTFS_DIR}/usr/libexec"
         "${ROOTFS_DIR}/usr/share/udhcpc"
     )
 
@@ -601,10 +605,14 @@ set_permissions() {
     chmod 0755 "${ROOTFS_DIR}/etc/init.d/rcS" 2>/dev/null || true
     chmod 0755 "${ROOTFS_DIR}/etc/init.d/network" 2>/dev/null || true
     chmod 0755 "${ROOTFS_DIR}/usr/share/udhcpc/default.script" 2>/dev/null || true
+    chmod 0755 "${ROOTFS_DIR}/usr/bin/start-weston" 2>/dev/null || true
+    chmod 0755 "${ROOTFS_DIR}/sbin/init-tty1" 2>/dev/null || true
 
     # Set proper directory permissions
     chmod 1777 "${ROOTFS_DIR}/tmp" 2>/dev/null || true
     chmod 1777 "${ROOTFS_DIR}/var/tmp" 2>/dev/null || true
+    chmod 0700 "${ROOTFS_DIR}/run/user" 2>/dev/null || true
+    chmod 0700 "${ROOTFS_DIR}/run/user/0" 2>/dev/null || true
 
     log_info "Permissions set."
 }

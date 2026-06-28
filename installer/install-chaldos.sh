@@ -163,6 +163,31 @@ select_install_type() {
 }
 
 # ============================================================
+# DESKTOP ENVIRONMENT
+# ============================================================
+select_de() {
+    header "Desktop Environment"
+
+    echo "Select desktop environment:"
+    echo "  1) ChaldOS Console — Text mode only (lightweight)"
+    echo "     Boots to shell. Uses framebuffer for wallpapers."
+    echo "     Recommended for servers, older hardware, minimal systems."
+    echo ""
+    echo "  2) ChaldOS Desktop — Wayland + Weston (with bottom panel!)"
+    echo "     Graphical desktop with task panel, multi-monitor,"
+    echo "     pixel-art wallpapers. Requires more RAM (~256MB+)."
+    echo ""
+    read -p "Enter choice (1 or 2): " de_choice
+
+    case "$de_choice" in
+        2) CHALDOS_DE="weston" ;;
+        *) CHALDOS_DE="console" ;;
+    esac
+
+    log "Selected: ${CHALDOS_DE}"
+}
+
+# ============================================================
 # PARTITIONING
 # ============================================================
 partition_disk() {
@@ -412,6 +437,18 @@ post_install() {
     # Set hostname
     echo "chaldos" > "${mount_point}/etc/hostname"
 
+    # Write desktop environment config
+    mkdir -p "${mount_point}/etc/chaldos"
+    cat > "${mount_point}/etc/chaldos/de.conf" << DE_CONF
+# ChaldOS Desktop Environment Configuration
+# ==========================================
+# CHALDOS_DE controls which graphical environment to launch:
+#   "console" — text mode (no graphical environment)
+#   "weston"  — Wayland desktop with Weston
+CHALDOS_DE="${CHALDOS_DE:-console}"
+DE_CONF
+    log "Desktop mode set to: ${CHALDOS_DE:-console}"
+
     # Set root password
     chroot "$mount_point" /bin/bash -c "echo 'root:chaldos' | chpasswd" 2>/dev/null || \
         warn "Could not set root password (set manually: passwd)"
@@ -438,6 +475,7 @@ finish_install() {
     echo "ChaldOS v${VERSION} has been installed successfully!"
     echo ""
     echo "  Installation: $INSTALL_MODE"
+    echo "  DE:           ${CHALDOS_DE}"
     echo "  Target disk:  $TARGET_DISK"
     echo "  Root:         $ROOT_PART"
     echo ""
@@ -458,10 +496,20 @@ finish_install() {
 # MAIN
 # ============================================================
 main() {
+    # Default DE mode
+    CHALDOS_DE="${CHALDOS_DE:-console}"
+
     # Handle auto-install
     if [[ "${1:-}" = "--auto" ]] && [[ -n "${2:-}" ]]; then
         TARGET_DISK="$2"
         INSTALL_MODE="entire-disk"
+        # Check for --de flag
+        if [[ "${3:-}" = "--de" ]] && [[ -n "${4:-}" ]]; then
+            case "$4" in
+                weston|console) CHALDOS_DE="$4" ;;
+                *) error "Unknown DE mode: $4 (use: console, weston)" ;;
+            esac
+        fi
         [[ $EUID -eq 0 ]] || error "Must be root"
 
         # Determine partition names
@@ -486,8 +534,13 @@ main() {
         echo "ChaldOS Installer v${VERSION}"
         echo ""
         echo "Usage:"
-        echo "  sudo ./install-chaldos.sh              Interactive install"
-        echo "  sudo ./install-chaldos.sh --auto <dev>  Automatic install"
+        echo "  sudo ./install-chaldos.sh                         Interactive install"
+        echo "  sudo ./install-chaldos.sh --auto <dev>             Automatic install"
+        echo "  sudo ./install-chaldos.sh --auto <dev> --de <mode> Auto install with DE"
+        echo ""
+        echo "DE modes:"
+        echo "  console    Text mode only (default)"
+        echo "  weston     Wayland desktop with Weston"
         echo ""
         exit 0
     fi
@@ -502,6 +555,7 @@ main() {
     detect_system
     select_disk
     select_install_type
+    select_de
     partition_disk
     install_system
     install_bootloader

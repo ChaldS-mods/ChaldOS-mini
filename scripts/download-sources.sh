@@ -197,6 +197,67 @@ download_busybox() {
     extract_tarball "$busybox_path"
 }
 
+# ==================================================================
+# Wayland / Weston stack downloads
+# ==================================================================
+
+LIBDRM_VERSION="2.4.120"
+WAYLAND_VERSION="1.22.0"
+WPROTO_VERSION="1.36"
+PIXMAN_VERSION="0.42.2"
+XKBCOMMON_VERSION="1.6.0"
+EUDEV_VERSION="3.2.12"
+LIBINPUT_VERSION="1.25.0"
+WESTON_VERSION="12.0.1"
+
+download_libdrm() {
+    local filename="libdrm-${LIBDRM_VERSION}.tar.xz"
+    download_file "https://dri.freedesktop.org/libdrm/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_wayland() {
+    local filename="wayland-${WAYLAND_VERSION}.tar.xz"
+    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_wayland_protocols() {
+    local filename="wayland-protocols-${WPROTO_VERSION}.tar.xz"
+    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_pixman() {
+    local filename="pixman-${PIXMAN_VERSION}.tar.gz"
+    download_file "https://cairographics.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_libxkbcommon() {
+    local filename="libxkbcommon-${XKBCOMMON_VERSION}.tar.xz"
+    download_file "https://xkbcommon.org/download/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_eudev() {
+    local filename="eudev-${EUDEV_VERSION}.tar.gz"
+    download_file "https://github.com/eudev-project/eudev/releases/download/v${EUDEV_VERSION}/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_libinput() {
+    local filename="libinput-${LIBINPUT_VERSION}.tar.bz2"
+    download_file "https://gitlab.freedesktop.org/libinput/libinput/-/archive/${LIBINPUT_VERSION}/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
+download_weston() {
+    local filename="weston-${WESTON_VERSION}.tar.xz"
+    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    extract_tarball "${DOWNLOAD_DIR}/${filename}"
+}
+
 # ------------------------------------------------------------------
 # Link downloaded sources to predictable paths
 # ------------------------------------------------------------------
@@ -221,6 +282,26 @@ link_sources() {
         log_error "BusyBox source directory ${busybox_src} not found after extraction."
         return 1
     fi
+
+    # West stack symlinks (used by build-wayland.sh)
+    local pairs=(
+        "libdrm-${LIBDRM_VERSION}" "libdrm"
+        "wayland-${WAYLAND_VERSION}" "wayland"
+        "wayland-protocols-${WPROTO_VERSION}" "wayland-protocols"
+        "pixman-${PIXMAN_VERSION}" "pixman"
+        "libxkbcommon-${XKBCOMMON_VERSION}" "libxkbcommon"
+        "eudev-${EUDEV_VERSION}" "eudev"
+        "libinput-${LIBINPUT_VERSION}" "libinput"
+        "weston-${WESTON_VERSION}" "weston"
+    )
+    for ((i=0; i<${#pairs[@]}; i+=2)); do
+        local ver_dir="${SOURCES_DIR}/${pairs[$i]}"
+        local link="${SOURCES_DIR}/${pairs[$i+1]}"
+        if [[ -d "$ver_dir" ]]; then
+            ln -sfn "$ver_dir" "$link" 2>/dev/null || true
+            log_info "Linked ${ver_dir} -> ${link}"
+        fi
+    done
 }
 
 # ------------------------------------------------------------------
@@ -233,6 +314,10 @@ print_summary() {
     echo "=============================================="
     echo "  Kernel:  linux-${KERNEL_VERSION}"
     echo "  BusyBox: busybox-${BUSYBOX_VERSION}"
+    echo "  libdrm:  libdrm-${LIBDRM_VERSION}"
+    echo "  wayland: wayland-${WAYLAND_VERSION}"
+    echo "  pixman:  pixman-${PIXMAN_VERSION}"
+    echo "  easton:  weston-${WESTON_VERSION}"
     echo "------------------------------------------------"
     echo "  Downloads: ${DOWNLOAD_DIR}"
     echo "  Sources:   ${SOURCES_DIR}"
@@ -249,12 +334,23 @@ main() {
     echo "=============================================="
     echo "  Kernel version:   ${KERNEL_VERSION}"
     echo "  BusyBox version:  ${BUSYBOX_VERSION}"
+    echo "  Wayland stack:    wayland ${WAYLAND_VERSION}, weston ${WESTON_VERSION}"
     echo "=============================================="
     echo ""
 
     ensure_directories
     download_kernel
     download_busybox
+    [[ "${SKIP_WAYLAND:-}" != "1" ]] && {
+        download_libdrm
+        download_wayland
+        download_wayland_protocols
+        download_pixman
+        download_libxkbcommon
+        download_eudev
+        download_libinput
+        download_weston
+    }
     link_sources
     print_summary
 

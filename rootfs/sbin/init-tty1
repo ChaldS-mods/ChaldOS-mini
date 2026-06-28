@@ -1,0 +1,21 @@
+#!/bin/sh
+# /sbin/init-tty1 — TTY1 session dispatcher
+# ===========================================
+# Called from /etc/inittab on tty1.
+# - If desktop mode is selected: starts weston
+# - Otherwise: starts login shell
+#
+# DE selection is stored in /etc/chaldos/de.conf:
+#   CHALDOS_DE="console"   — text mode (default)
+#   CHALDOS_DE="weston"    — Wayland desktop
+
+if [ -f /etc/chaldos/de.conf ]; then
+    . /etc/chaldos/de.conf 2>/dev/null
+    if [ "${CHALDOS_DE}" = "weston" ]; then
+        # Start Wayland compositor
+        exec /usr/bin/start-weston
+    fi
+fi
+
+# Fallback: console login
+exec /bin/login

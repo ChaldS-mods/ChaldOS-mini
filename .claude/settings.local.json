@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs chmod +x)"
+      "Bash(xargs chmod +x)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix: ensure BUILD_DIR exists before saving kernel config, remove CONFIG_INIT check *)",
+      "Bash(git push *)",
+      "Bash(curl -sL \"https://wayland.freedesktop.org/releases/weston-12.0.1.tar.xz\" -o /tmp/weston-12.0.1.tar.xz)",
+      "Bash(chmod +x *)",
+      "Bash(sed -i 's/grep -qiE \"\\(error|warning|new\\)\"/grep -qiE \"\\(error|warning\\)\"/' scripts/build-busybox.sh)",
+      "Bash(git commit -m 'fix: use piped oldconfig for BusyBox instead of olddefconfig *)"
     ]
   }
 }

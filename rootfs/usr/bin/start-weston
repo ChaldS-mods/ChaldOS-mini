@@ -1,0 +1,44 @@
+#!/bin/sh
+# start-weston — Launch Weston Wayland compositor
+# ==================================================
+# Called from /sbin/init-tty1 on tty1 when desktop mode is selected.
+# Takes over the display and shows the Weston desktop shell.
+
+export XDG_RUNTIME_DIR="/run/user/0"
+export WAYLAND_DISPLAY="wayland-0"
+export WESTON_TTY="1"
+
+# Ensure runtime directory exists
+mkdir -p "${XDG_RUNTIME_DIR}"
+chmod 700 "${XDG_RUNTIME_DIR}"
+
+# Wait for udev to settle so DRM devices are ready
+if command -v udevadm &>/dev/null; then
+    udevadm settle -t 5 2>/dev/null || true
+fi
+
+# Ensure proper permissions on DRM devices
+if [ -d /dev/dri ]; then
+    chmod 666 /dev/dri/* 2>/dev/null || true
+fi
+
+# Ensure input devices are accessible
+if [ -d /dev/input ]; then
+    chmod 666 /dev/input/event* 2>/dev/null || true
+fi
+
+# Log startup
+echo "[ChaldOS] Starting Weston Wayland compositor..."
+echo "[ChaldOS] Panel is at the BOTTOM (as requested!)"
+
+# Start weston with DRM backend + pixman software renderer
+# --tty=1 tells weston to take over tty1
+# --idle-time=0 disables display blanking
+exec weston \
+    --backend=drm-backend.so \
+    --tty=1 \
+    --idle-time=0 \
+    2>&1
+
+# If weston exits, fall through to a shell
+echo "[ChaldOS] Weston exited. Returning to console."

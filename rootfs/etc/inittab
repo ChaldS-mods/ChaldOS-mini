@@ -1,14 +1,20 @@
 # ChaldOS /etc/inittab
 # ======================
 # BusyBox init configuration
+#
+# tty1: dispatcher script checks DE mode and starts either
+#       Weston (Wayland desktop) or login shell (console)
 
 ::sysinit:/etc/init.d/rcS
-::respawn:-/bin/sh
 ::ctrlaltdel:/sbin/reboot
 ::shutdown:/sbin/swapoff -a
 ::shutdown:/bin/umount -a -r
 ::restart:/sbin/init
-tty1::respawn:/bin/login
-tty2::respawn:/bin/sh
-tty3::respawn:/bin/sh
-tty4::respawn:/bin/sh
+
+# TTY1 — auto-detects desktop or console mode
+tty1::respawn:/sbin/init-tty1
+
+# TTY2-4 — always console shells
+tty2::respawn:-/bin/sh
+tty3::respawn:-/bin/sh
+tty4::respawn:-/bin/sh

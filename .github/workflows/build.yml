@@ -74,6 +74,17 @@ jobs:
           restore-keys: |
             chaldos-busybox-
 
+      - name: Cache Wayland stack build
+        uses: actions/cache@v4
+        id: cache-wayland
+        with:
+          path: |
+            output/build/wayland-staging
+          key: chaldos-wayland-${{ hashFiles('scripts/build-wayland.sh') }}
+          restore-keys: |
+            chaldos-wayland-
+
+
       # ─── 3. Install dependencies ────────────────────────
       - name: Install build dependencies
         run: |
@@ -97,7 +108,15 @@ jobs:
             grub-efi-amd64-bin \
             mtools \
             lz4 \
-            zstd
+            zstd \
+            meson \
+            ninja-build \
+            libxml2-dev \
+            libffi-dev \
+            libpng-dev \
+            libpam-dev \
+            libmtdev-dev \
+            libevdev-dev
 
       # ─── 4. Show environment ───────────────────────────
       - name: Show build environment
@@ -143,6 +162,15 @@ jobs:
           ./scripts/build-rootfs.sh
         env:
           OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Build Wayland stack (Weston desktop)
+        if: env.BUILD_TYPE == 'full'
+        run: |
+          chmod +x scripts/build-wayland.sh
+          ./scripts/build-wayland.sh
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+          ROOTFS_DIR: ${{ github.workspace }}/output/build/rootfs
 
       - name: Build initramfs
         run: |
