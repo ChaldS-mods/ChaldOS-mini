@@ -1,0 +1,36 @@
+#!/bin/sh
+# ChaldOS network initialization
+# /etc/init.d/network
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+echo -n "[ChaldOS] Network: "
+
+# Detect ethernet interfaces
+ETH_IFACES=$(ip -o link show | grep -v lo | grep 'state DOWN' | awk -F': ' '{print $2}' | grep -E '^e' || true)
+
+if [[ -z "$ETH_IFACES" ]]; then
+    # Try to bring up any interface
+    for iface in /sys/class/net/*; do
+        name=$(basename "$iface")
+        [[ "$name" = "lo" ]] && continue
+        ETH_IFACES="$ETH_IFACES $name"
+    done
+fi
+
+if [[ -n "$ETH_IFACES" ]]; then
+    for iface in $ETH_IFACES; do
+        echo -n "${iface} "
+        ip link set "$iface" up 2>/dev/null || true
+        # Try DHCP
+        if command -v udhcpc &>/dev/null; then
+            udhcpc -i "$iface" -q -n -s /usr/share/udhcpc/default.script 2>/dev/null && \
+                echo -n "(DHCP OK) " || echo -n "(DHCP fail) "
+        elif command -v dhcpcd &>/dev/null; then
+            dhcpcd "$iface" 2>/dev/null && echo -n "(DHCP OK) " || true
+        fi
+    done
+    echo "[OK]"
+else
+    echo "No interfaces found"
+fi

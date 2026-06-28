@@ -1,0 +1,44 @@
+# ChaldOS default profile
+# /etc/profile
+
+# System-wide profile
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export EDITOR="vi"
+export PAGER="less"
+export PS1='\[\e[0;32m\]chaldos\[\e[0m\]@\[\e[1;34m\]\h\[\e[0m\]:\[\e[0;33m\]\w\[\e[0m\]\$ '
+export PS2='> '
+export LS_OPTIONS="--color=auto"
+
+# Aliases
+alias ls='ls --color=auto'
+alias ll='ls -la'
+alias la='ls -A'
+alias l='ls -CF'
+alias grep='grep --color=auto'
+alias cls='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias h='history'
+alias j='jobs -l'
+alias vi='vi -c "set background=dark"'
+alias ip='ip -c'
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias fetch='wget --continue --progress=bar'
+
+# ChaldOS-specific
+alias chaldos='chaldos-info'
+alias reboot='sudo /sbin/reboot'
+alias poweroff='sudo /sbin/poweroff'
+alias ll='ls -lh --color=auto'
+
+# Load ChaldOS library
+source /usr/lib/chaldos/libchaldos.sh 2>/dev/null || true
+
+# Show MOTD on login (only on first shell)
+if [[ ! -f /tmp/.motd_shown ]]; then
+    cat /etc/motd
+    touch /tmp/.motd_shown
+fi

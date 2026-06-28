@@ -1,0 +1,36 @@
+# ChaldOS .gitignore
+
+# Build output
+output/
+build/
+
+# Downloaded sources
+sources/
+downloads/
+
+# Editor files
+*.swp
+*.swo
+*~
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Generated wallpapers (preview)
+wallpapers/preview/
+
+# GitHub Pages
+docs/_site/
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*

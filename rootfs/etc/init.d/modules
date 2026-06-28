@@ -1,0 +1,55 @@
+#!/bin/sh
+# ChaldOS kernel modules loader
+# /etc/init.d/modules
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+# Graphics drivers
+MODULES_GRAPHICS="
+    i915
+    amdgpu
+    nouveau
+    simpledrm
+    bochs_drm
+    cirrus
+    mgag200
+"
+
+# Filesystem drivers
+MODULES_FS="
+    ext4
+    squashfs
+    overlay
+"
+
+# Network drivers
+MODULES_NET="
+    e1000
+    e1000e
+    igb
+    r8169
+    tg3
+    virtio_net
+    ath9k
+    ath10k
+    iwlwifi
+"
+
+echo -n "[ChaldOS] Loading modules..."
+
+# Graphics
+for mod in $MODULES_GRAPHICS; do
+    modprobe -q "$mod" 2>/dev/null && echo -n " ${mod}" || true
+done
+
+# Filesystem
+for mod in $MODULES_FS; do
+    modprobe -q "$mod" 2>/dev/null || true
+done
+
+# Network
+for mod in $MODULES_NET; do
+    modprobe -q "$mod" 2>/dev/null && echo -n " ${mod}" || true
+done
+
+echo " [OK]"

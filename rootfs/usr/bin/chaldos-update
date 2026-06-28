@@ -1,0 +1,47 @@
+#!/bin/sh
+# chaldos-update — Check for system updates
+# ===========================================
+
+. /usr/lib/chaldos/libchaldos.sh
+
+CHALDOS_VERSION="1.0.0"
+UPDATE_URL="https://raw.githubusercontent.com/chaldos/os/main/version.txt"
+
+check_online() {
+    ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 || ping -c 1 -W 2 github.com >/dev/null 2>&1
+}
+
+chaldos_header "ChaldOS Update Check"
+
+echo "  Current version: ${CHALDOS_VERSION}"
+
+if ! check_online; then
+    chaldos_warn "No network connection"
+    chaldos_info "Connect to the internet and try again"
+    exit 1
+fi
+
+chaldos_info "Checking for updates..."
+
+if command -v wget &>/dev/null; then
+    REMOTE_VER=$(wget -q -O- --timeout=5 "$UPDATE_URL" 2>/dev/null || echo "")
+elif command -v curl &>/dev/null; then
+    REMOTE_VER=$(curl -s --max-time 5 "$UPDATE_URL" 2>/dev/null || echo "")
+else
+    chaldos_warn "Cannot check updates (wget/curl not found)"
+    exit 1
+fi
+
+if [[ -z "$REMOTE_VER" ]]; then
+    chaldos_warn "Could not reach update server"
+    exit 1
+fi
+
+echo "  Latest version:  ${REMOTE_VER}"
+
+if [[ "$REMOTE_VER" = "$CHALDOS_VERSION" ]]; then
+    chaldos_log "ChaldOS is up to date! ✓"
+else
+    chaldos_info "New version available: ${REMOTE_VER}"
+    chaldos_info "Visit https://chaldos.dev to download"
+fi

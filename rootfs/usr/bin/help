@@ -1,0 +1,79 @@
+#!/bin/sh
+# help — ChaldOS built-in command reference
+# ==========================================
+
+cat << 'HELP'
+╔══════════════════════════════════════════════════════════════╗
+║                    ChaldOS Command Reference                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+═══════════════════════ SYSTEM ═══════════════════════════════
+
+  chaldos-info         Display system information (OS, CPU, RAM, net)
+  chaldos-config       Configure system settings
+  chaldos-update       Check for system updates
+  chaldos-wallpaper    Set desktop wallpaper
+  monitor-config       Configure multi-monitor setup
+  help                 Show this help
+  clear                Clear the terminal
+
+═══════════════════════ FILES ════════════════════════════════
+
+  ls [options]         List directory contents
+  cd <dir>             Change directory
+  pwd                  Print working directory
+  cp <src> <dst>       Copy files
+  mv <src> <dst>       Move/rename files
+  rm <file>            Remove files
+  mkdir <dir>          Create directory
+  cat <file>           Display file contents
+  less <file>          View file with paging
+  head <file>          Show first lines of file
+  tail <file>          Show last lines of file
+  find <dir> -name <p> Search for files
+  grep <pattern> <file> Search file contents
+  nano <file>          Edit file (nano)
+  vi <file>            Edit file (vi)
+
+═══════════════════════ NETWORK ══════════════════════════════
+
+  wget <url>           Download a file
+  fetch <url>          Alias for wget --continue
+  curl <url>           Download/transfer data
+  ping <host>          Test network connectivity
+  ifconfig             Show network interfaces
+  ip addr              Show IP addresses
+  dhcpcd <iface>       Get IP via DHCP
+  ssh <user>@<host>    SSH connection (if dropbear installed)
+
+═══════════════════════ PROCESSES ═══════════════════════════
+
+  ps                   List processes
+  top                  Process monitor
+  kill <pid>           Kill a process
+  killall <name>       Kill processes by name
+  htop                 Process monitor (if installed)
+
+═══════════════════════ SYSTEM CONTROL ══════════════════════
+
+  reboot               Reboot the system
+  poweroff             Shutdown
+  dmesg                Show kernel messages
+  modprobe <mod>       Load kernel module
+  lsmod                List loaded modules
+  mount / umount       Mount/unmount filesystems
+  df                   Free disk space
+  free                 Free memory
+  uname -a             Show kernel info
+
+═══════════════════════ CUSTOM COMMANDS ═════════════════════
+
+  chaldos-info         Full system info display
+  fetch <url>          Download with progress bar
+  sview [file]         Simple text viewer with syntax hint
+  mkchaldos <name>     Create a new ChaldOS project directory
+
+══════════════════════════════════════════════════════════════
+
+  For more details, see: docs/COMMANDS.md
+HELP

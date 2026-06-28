@@ -1,0 +1,36 @@
+#!/bin/sh
+# fetch — ChaldOS download tool (wget wrapper with progress)
+# ==========================================================
+
+. /usr/lib/chaldos/libchaldos.sh
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: fetch <url> [output_filename]"
+    echo ""
+    echo "Download a file with progress indication."
+    echo "Aliases: wget, curl"
+    exit 1
+fi
+
+URL="$1"
+FILENAME="${2:-}"
+
+# Detect best download tool
+if command -v wget &>/dev/null; then
+    if [[ -n "$FILENAME" ]]; then
+        wget --continue --progress=bar:force --show-progress -O "$FILENAME" "$URL"
+    else
+        wget --continue --progress=bar:force --show-progress "$URL"
+    fi
+elif command -v curl &>/dev/null; then
+    if [[ -n "$FILENAME" ]]; then
+        curl -L -o "$FILENAME" --progress-bar "$URL"
+    else
+        curl -L -O --progress-bar "$URL"
+    fi
+else
+    chaldos_error "No download tool found (install wget or curl)"
+    exit 1
+fi
+
+exit $?

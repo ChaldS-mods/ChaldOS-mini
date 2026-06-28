@@ -1,0 +1,105 @@
+#!/bin/sh
+# monitor-config — ChaldOS multi-monitor configuration
+# =====================================================
+# Configure display outputs for multi-monitor setups.
+# Works with: framebuffer (/dev/fb*), Xorg, Wayland.
+
+. /usr/lib/chaldos/libchaldos.sh
+
+detect_monitors() {
+    local count=0
+    chaldos_header "Detected Displays"
+
+    # Check sysfs for framebuffers
+    for fb in /sys/class/graphics/fb*; do
+        [[ -e "$fb" ]] || continue
+        count=$((count + 1))
+        local name=$(basename "$fb")
+        local res=$(cat "${fb}/virtual_size" 2>/dev/null || echo "unknown")
+        local bits=$(cat "${fb}/bits_per_pixel" 2>/dev/null || echo "?")
+        local state=$(cat "${fb}/state" 2>/dev/null || echo "N/A")
+        echo "  ${C_YELLOW}${name}${C_RESET}:"
+        echo "    Resolution: ${res}"
+        echo "    Depth: ${bits}bpp"
+        echo "    State: ${state}"
+    done
+
+    # Check /proc/fb
+    if [[ -f /proc/fb ]]; then
+        echo -e "\n  ${C_CYAN}Framebuffer devices (/proc/fb):${C_RESET}"
+        cat /proc/fb | while read line; do
+            echo "    ${line}"
+        done
+    fi
+
+    if [[ $count -eq 0 ]]; then
+        chaldos_warn "No displays detected via sysfs"
+        chaldos_info "Try: cat /proc/fb"
+    fi
+
+    echo ""
+    echo "  Total displays: ${count}"
+}
+
+set_mode() {
+    local fbdev="$1" res="$2"
+    [[ -z "$fbdev" ]] && { chaldos_error "Usage: monitor-config setmode <fbN> <WxH>"; exit 1; }
+    [[ -z "$res" ]] && { chaldos_error "Usage: monitor-config setmode <fbN> <WxH>"; exit 1; }
+
+    local width="${res%x*}"
+    local height="${res#*x}"
+
+    if [[ ! -e "/dev/${fbdev}" ]]; then
+        chaldos_error "${fbdev} not found"
+        exit 1
+    fi
+
+    # Set framebuffer resolution using fbset
+    if command -v fbset &>/dev/null; then
+        fbset -fb "/dev/${fbdev}" -g "${width}" "${height}" "${width}" "${height}" 32
+        chaldos_log "${fbdev} set to ${res} @32bpp"
+    else
+        chaldos_warn "fbset not available. Try: echo ${res} > /sys/class/graphics/${fbdev}/mode"
+        echo "${res}" > "/sys/class/graphics/${fbdev}/mode" 2>/dev/null && \
+            chaldos_log "${fbdev} mode set" || \
+            chaldos_error "Failed to set mode (need root?)"
+    fi
+}
+
+show_help() {
+    echo "ChaldOS Multi-Monitor Configuration"
+    echo ""
+    echo "Usage: monitor-config <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  detect         Detect and list all displays"
+    echo "  list           Alias for detect"
+    echo "  setmode <fbN>  Set framebuffer resolution (e.g. fb0 1920x1080)"
+    echo "  extend         Extend desktop across all monitors (fbdev only)"
+    echo "  clone          Clone display to all monitors"
+    echo "  help           Show this help"
+}
+
+case "${1:-detect}" in
+    detect|list|status)
+        detect_monitors
+        ;;
+    setmode|mode)
+        set_mode "$2" "$3"
+        ;;
+    extend)
+        chaldos_info "Extended desktop: multi-fb not widely supported in fbdev"
+        chaldos_info "Use Xorg/Wayland with proper GPU drivers for this"
+        detect_monitors
+        ;;
+    clone)
+        chaldos_info "Clone mode: mirrors first framebuffer to all outputs"
+        chaldos_info "This is typically handled by the GPU driver"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        ;;
+esac

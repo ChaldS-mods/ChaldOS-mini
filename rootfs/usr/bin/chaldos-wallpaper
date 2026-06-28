@@ -1,0 +1,77 @@
+#!/bin/sh
+# chaldos-wallpaper — Set ChaldOS wallpaper
+# ===========================================
+# Sets the framebuffer background image (TTY logo) or
+# configures wallpaper for X11/Wayland.
+
+. /usr/lib/chaldos/libchaldos.sh
+
+WALLPAPER_DIR="/usr/share/wallpapers"
+
+list_wallpapers() {
+    chaldos_header "Available ChaldOS Wallpapers"
+    local i=1
+    for img in "${WALLPAPER_DIR}"/*.png; do
+        [[ -f "$img" ]] || continue
+        local name=$(basename "$img" .png)
+        local size
+        size=$(du -h "$img" | cut -f1)
+        echo "  ${i}) ${name} [${size}]"
+        i=$((i + 1))
+    done
+    echo ""
+    echo "Usage: chaldos-wallpaper <name>"
+}
+
+set_wallpaper() {
+    local name="$1"
+    local file="${WALLPAPER_DIR}/${name}.png"
+
+    if [[ ! -f "$file" ]]; then
+        chaldos_error "Wallpaper not found: ${name}"
+        list_wallpapers
+        exit 1
+    fi
+
+    # Save selection
+    mkdir -p /etc/chaldos
+    echo "$file" > /etc/chaldos/wallpaper
+
+    # If fbi (framebuffer image viewer) is available, show it
+    if command -v fbi &>/dev/null; then
+        chaldos_log "Setting wallpaper: ${name}"
+        # For TTY: fbi -t 5 -1 --noverbose "$file" >/dev/null 2>&1 &
+    fi
+
+    chaldos_log "Wallpaper set to: ${name}"
+}
+
+case "${1:-list}" in
+    list|ls|--list)
+        list_wallpapers
+        ;;
+    set|--set)
+        [[ -n "$2" ]] || { chaldos_error "Specify wallpaper name"; list_wallpapers; exit 1; }
+        set_wallpaper "$2"
+        ;;
+    current|--current)
+        if [[ -f /etc/chaldos/wallpaper ]]; then
+            echo "Current wallpaper: $(cat /etc/chaldos/wallpaper)"
+        else
+            echo "Default wallpaper (terminal)"
+        fi
+        ;;
+    help|--help|-h)
+        echo "ChaldOS Wallpaper Tool"
+        echo "Usage: chaldos-wallpaper [command] [name]"
+        echo ""
+        echo "Commands:"
+        echo "  list        List available wallpapers"
+        echo "  set <name>  Set active wallpaper"
+        echo "  current     Show current wallpaper"
+        echo "  help        Show this help"
+        ;;
+    *)
+        set_wallpaper "$1"
+        ;;
+esac

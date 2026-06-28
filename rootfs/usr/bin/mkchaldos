@@ -1,0 +1,56 @@
+#!/bin/sh
+# mkchaldos — Create a new ChaldOS project
+# ==========================================
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: mkchaldos <project-name>"
+    exit 1
+fi
+
+NAME="$1"
+
+if [[ -d "$NAME" ]]; then
+    echo "Error: directory '$NAME' already exists"
+    exit 1
+fi
+
+mkdir -p "$NAME"/{src,include,build,docs}
+touch "$NAME/README.md"
+touch "$NAME/src/main.c"
+
+cat > "$NAME/Makefile" << 'MAKEFILE'
+# ChaldOS Project
+.PHONY: all clean
+
+CC = gcc
+CFLAGS = -Wall -Wextra -pedantic
+
+all: build/program
+
+build/program: src/main.c | build
+	$(CC) $(CFLAGS) -o $@ $<
+
+build:
+	mkdir -p build
+
+clean:
+	rm -rf build
+
+run: all
+	./build/program
+MAKEFILE
+
+cat > "$NAME/README.md" << 'README'
+# ${NAME}
+
+ChaldOS project created on $(date +%Y-%m-%d).
+
+## Building
+
+    make
+    make run
+    make clean
+README
+
+echo "✓ ChaldOS project '${NAME}' created"
+echo "  cd ${NAME} && make run"

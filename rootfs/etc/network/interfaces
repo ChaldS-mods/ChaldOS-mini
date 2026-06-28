@@ -1,0 +1,16 @@
+# ChaldOS network interfaces
+# /etc/network/interfaces
+
+# Loopback
+auto lo
+iface lo inet loopback
+
+# Wired Ethernet (DHCP)
+auto eth0
+iface eth0 inet dhcp
+
+# Wireless (requires wpa_supplicant)
+# auto wlan0
+# iface wlan0 inet dhcp
+#     wpa-ssid "YourNetwork"
+#     wpa-psk "YourPassword"

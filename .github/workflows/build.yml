@@ -1,0 +1,224 @@
+# ChaldOS — GitHub Actions Build
+# ===============================
+# Автоматическая сборка ChaldOS ISO при пуше в main
+# и по запросу (workflow_dispatch).
+
+name: Build ChaldOS ISO
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths-ignore:
+      - '**.md'
+      - 'wallpapers/**'
+      - 'docs/**'
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Тип сборки'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - quick
+
+env:
+  BUILD_TYPE: ${{ github.event.inputs.build_type || 'full' }}
+
+jobs:
+  build:
+    name: Build ChaldOS ISO
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+
+    steps:
+      # ─── 1. Checkout ───────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # ─── 2. Cache ├─────────────────────────────────────
+      - name: Cache downloaded sources
+        uses: actions/cache@v4
+        id: cache-sources
+        with:
+          path: |
+            output/sources
+            !output/sources/**/*.tar.*
+          key: chaldos-sources-${{ hashFiles('config/chaldos.conf') }}
+          restore-keys: |
+            chaldos-sources-
+
+      - name: Cache kernel build
+        uses: actions/cache@v4
+        id: cache-kernel
+        with:
+          path: |
+            output/build/linux
+            output/images/vmlinuz
+          key: chaldos-kernel-${{ hashFiles('config/kernel.config') }}-${{ hashFiles('config/chaldos.conf') }}
+          restore-keys: |
+            chaldos-kernel-
+
+      - name: Cache BusyBox build
+        uses: actions/cache@v4
+        id: cache-busybox
+        with:
+          path: |
+            output/build/busybox
+          key: chaldos-busybox-${{ hashFiles('config/busybox.config') }}-${{ hashFiles('config/chaldos.conf') }}
+          restore-keys: |
+            chaldos-busybox-
+
+      # ─── 3. Install dependencies ────────────────────────
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential \
+            libncurses-dev \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            bc \
+            wget \
+            rsync \
+            cpio \
+            xz-utils \
+            gawk \
+            squashfs-tools \
+            xorriso \
+            grub-pc-bin \
+            grub-efi-amd64-bin \
+            mtools \
+            lz4 \
+            zstd
+
+      # ─── 4. Show environment ───────────────────────────
+      - name: Show build environment
+        run: |
+          echo "=== Build Environment ==="
+          echo "OS: $(uname -a)"
+          echo "CPU: $(nproc) cores"
+          echo "RAM: $(free -h | grep Mem | awk '{print $2}')"
+          echo "Disk: $(df -h . | tail -1 | awk '{print $4}') free"
+          echo "GCC: $(gcc --version | head -1)"
+          echo "Make: $(make --version | head -1)"
+          echo ""
+          echo "=== Build Config ==="
+          cat config/chaldos.conf 2>/dev/null || echo "No config found"
+
+      # ─── 5. Build ──────────────────────────────────────
+      - name: Download sources
+        run: |
+          chmod +x scripts/download-sources.sh
+          mkdir -p output/sources
+          ./scripts/download-sources.sh
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Build Linux kernel
+        run: |
+          chmod +x scripts/build-kernel.sh
+          mkdir -p output/images
+          ./scripts/build-kernel.sh --config ${{ github.workspace }}/config/kernel.config
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Build BusyBox
+        run: |
+          chmod +x scripts/build-busybox.sh
+          ./scripts/build-busybox.sh --config ${{ github.workspace }}/config/busybox.config
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Build root filesystem
+        run: |
+          chmod +x scripts/build-rootfs.sh
+          ./scripts/build-rootfs.sh
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Build initramfs
+        run: |
+          chmod +x scripts/build-initramfs.sh
+          mkdir -p output/images
+          ./scripts/build-initramfs.sh
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      - name: Create bootable ISO
+        run: |
+          chmod +x scripts/build-iso.sh
+          ./scripts/build-iso.sh
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/output
+
+      # ─── 6. Show results ──────────────────────────────
+      - name: Show build results
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "  Build Complete!"
+          echo "═══════════════════════════════════════"
+          echo ""
+          ls -lh output/images/ 2>/dev/null || echo "No images found"
+          echo ""
+          echo "Build time: $(date)"
+
+      # ─── 7. Upload artifacts ─────────────────────────
+      - name: Upload ChaldOS ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaldos-iso
+          path: output/images/*.iso
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload kernel (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaldos-kernel
+          path: output/images/vmlinuz
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload initramfs
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaldos-initramfs
+          path: output/images/initramfs.cpio.gz
+          if-no-files-found: warn
+          retention-days: 7
+
+      # ─── 8. Release (when tagged) ────────────────────
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ChaldOS ${{ github.ref_name }}
+          body: |
+            ## ChaldOS ${{ github.ref_name }}
+
+            Автоматическая сборка.
+
+            ### Что внутри:
+            - Linux kernel 6.6 LTS
+            - BusyBox 1.36
+            - ChaldOS custom tools
+            - Pixel wallpapers
+
+            ### Установка:
+            Запишите ISO на USB:
+            ```
+            sudo dd if=chaldos-*.iso of=/dev/sdX bs=4M status=progress
+            ```
+          files: |
+            output/images/*.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

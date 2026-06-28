@@ -1,0 +1,71 @@
+#!/bin/sh
+# ChaldOS initramfs init
+# =======================
+# This is the first process that runs after the kernel boots.
+# It mounts the root filesystem and hands off to the real init.
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+# Mount basic filesystems
+mount -t proc none /proc 2>/dev/null
+mount -t sysfs none /sys 2>/dev/null
+mount -t devtmpfs none /dev 2>/dev/null
+
+# Early userspace helpers
+echo "ChaldOS: Starting initramfs..."
+
+# Parse kernel command line
+for param in $(cat /proc/cmdline); do
+    case "$param" in
+        root=*) ROOT="${param#root=}" ;;
+        rootfstype=*) ROOTFSTYPE="${param#rootfstype=}" ;;
+        ro) RO_FLAG="ro" ;;
+        rw) RO_FLAG="rw" ;;
+        quiet) QUIET="1" ;;
+        debug) DEBUG="1" ;;
+    esac
+done
+
+ROOT="${ROOT:-/dev/sda1}"
+ROOTFSTYPE="${ROOTFSTYPE:-ext4}"
+RO_FLAG="${RO_FLAG:-rw}"
+
+[[ -n "$DEBUG" ]] && echo "ChaldOS: root=$ROOT type=$ROOTFSTYPE mode=$RO_FLAG"
+
+# Try to mount root
+mkdir -p /newroot
+if mount -t "$ROOTFSTYPE" -o "$RO_FLAG,noatime" "$ROOT" /newroot 2>/dev/null; then
+    [[ -n "$QUIET" ]] || echo "ChaldOS: Root mounted from $ROOT"
+else
+    # Fallback: try to find root partition
+    echo "ChaldOS: Scanning for root filesystem..."
+    sleep 1
+    for dev in /dev/sd* /dev/vd* /dev/nvme*n1 /dev/mmcblk*p; do
+        [[ -b "$dev" ]] || continue
+        if mount -t ext4 -o "$RO_FLAG,noatime" "$dev" /newroot 2>/dev/null; then
+            ROOT="$dev"
+            echo "ChaldOS: Found root on $dev"
+            break
+        fi
+        if mount -t squashfs -o "$RO_FLAG,noatime" "$dev" /newroot 2>/dev/null; then
+            ROOT="$dev"
+            echo "ChaldOS: Found root (squashfs) on $dev"
+            break
+        fi
+    done
+fi
+
+# Check if root is mounted
+if ! mountpoint -q /newroot; then
+    echo "ChaldOS: ERROR - Cannot find root filesystem!"
+    echo "ChaldOS: Dropping to emergency shell..."
+    exec /bin/sh
+fi
+
+# Clean up and switch to real root
+mount --move /proc /newroot/proc 2>/dev/null
+mount --move /sys /newroot/sys 2>/dev/null
+mount --move /dev /newroot/dev 2>/dev/null
+
+# Switch to real root
+exec switch_root /newroot /sbin/init

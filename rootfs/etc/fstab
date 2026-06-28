@@ -1,0 +1,12 @@
+# ChaldOS filesystem table
+# /etc/fstab
+
+# Root filesystem
+/dev/sda1  /          ext4    defaults,noatime  0  1
+
+# Pseudo filesystems
+proc       /proc      proc    defaults          0  0
+sysfs      /sys       sysfs   defaults          0  0
+devpts     /dev/pts   devpts  defaults,gid=5    0  0
+tmpfs      /tmp       tmpfs   defaults          0  0
+tmpfs      /run       tmpfs   defaults          0  0

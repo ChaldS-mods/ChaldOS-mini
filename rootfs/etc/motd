@@ -1,0 +1,15 @@
+╔═══════════════════════════════════════════════════╗
+║              ░▒▓█ ChaldOS █▓▒░                    ║
+║         Pixel Operating System  v1.0.0            ║
+║           "Pixel Dawn"                            ║
+╚═══════════════════════════════════════════════════╝
+
+  Commands:    help         - Show available commands
+               chaldos-info - System information
+               chaldos-config - Configure system settings
+
+  Network:     fetch <url>  - Download a file
+               ping <host>  - Test connectivity
+
+  Type 'help' for a full list of commands.
+

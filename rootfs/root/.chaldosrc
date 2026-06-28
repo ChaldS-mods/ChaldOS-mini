@@ -1,0 +1,9 @@
+# ChaldOS System Configuration
+# /root/.chaldosrc
+
+hostname=chaldos
+theme=pixel-dark
+wallpaper=chaldos_night
+resolution=1920x1080
+language=en_US.UTF-8
+timezone=UTC

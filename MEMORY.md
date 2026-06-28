@@ -1,0 +1,12 @@
+- [Build System](docs/BUILD.md) — Build instructions
+- [Commands](docs/COMMANDS.md) — Full command reference
+- [Installation](docs/INSTALL.md) — Installation guide
+- [Rootfs Config] — rootfs/etc/init.d/rcS, inittab, fstab, profile
+- [Custom Commands] — rootfs/usr/bin/ (chaldos-info, help, fetch, monitor-config, etc.)
+- [Installer] — installer/install-chaldos.sh with full-disk/dual-boot/manual modes
+- [Bootloader] — bootloader/grub/grub.cfg, bootloader/isolinux/*
+- [Network] — rootfs/etc/network/interfaces, wpa_supplicant, resolv.conf
+- [Display] — rootfs/etc/X11/xorg.conf.d/*, modprobe.d/graphics.conf
+- [Wallpapers] — wallpapers/ (7 pixel-art wallpapers, 1920×1080)
+- [Kernel Config] — config/kernel.config (2114 lines, minimal x86_64)
+- [BusyBox Config] — config/busybox.config (981 lines, full userspace)

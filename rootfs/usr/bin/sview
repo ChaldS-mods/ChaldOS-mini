@@ -1,0 +1,36 @@
+#!/bin/sh
+# sview — simple text viewer with ChaldOS styling
+# ================================================
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: sview <file>"
+    exit 1
+fi
+
+FILE="$1"
+
+if [[ ! -f "$FILE" ]]; then
+    echo "Error: file not found: $FILE"
+    exit 1
+fi
+
+# Check file type
+FILETYPE=$(file -b "$FILE" 2>/dev/null || echo "text")
+
+# Get line count and size
+LINES=$(wc -l < "$FILE")
+SIZE=$(du -h "$FILE" | cut -f1)
+
+echo "╔══════════════════════════════════════╗"
+echo "║ ChaldOS File Viewer                  ║"
+echo "║ File: $(basename "$FILE")"
+echo "║ Size: $SIZE | Lines: $LINES"
+echo "╚══════════════════════════════════════╝"
+echo ""
+
+# Use less if available, otherwise cat
+if command -v less &>/dev/null; then
+    less -N "$FILE"
+else
+    cat -n "$FILE"
+fi
