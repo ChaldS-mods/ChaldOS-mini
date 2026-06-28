@@ -204,7 +204,7 @@ build_kernel() {
     # Build the kernel binary
     make -j"${JOBS}" bzImage 2>&1 | while IFS= read -r line; do
         # Only show lines that are warnings or errors to keep output manageable
-        if echo "$line" | grep -qiE "(error|warning|fatal|cannot|failed|***)"; then
+        if echo "$line" | grep -qiE "(error|warning|fatal|cannot|failed)"; then
             echo "  $line"
         fi
     done
