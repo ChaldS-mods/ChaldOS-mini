@@ -202,7 +202,7 @@ download_busybox() {
 # ==================================================================
 
 LIBDRM_VERSION="2.4.120"
-WAYLAND_VERSION="1.22.0"
+WAYLAND_VERSION="1.24.0"
 WPROTO_VERSION="1.36"
 PIXMAN_VERSION="0.42.2"
 XKBCOMMON_VERSION="1.6.0"
@@ -218,13 +218,13 @@ download_libdrm() {
 
 download_wayland() {
     local filename="wayland-${WAYLAND_VERSION}.tar.xz"
-    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    download_file "https://gitlab.freedesktop.org/wayland/wayland/-/releases/${WAYLAND_VERSION}/downloads/${filename}" "${DOWNLOAD_DIR}/${filename}"
     extract_tarball "${DOWNLOAD_DIR}/${filename}"
 }
 
 download_wayland_protocols() {
     local filename="wayland-protocols-${WPROTO_VERSION}.tar.xz"
-    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    download_file "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/${WPROTO_VERSION}/downloads/${filename}" "${DOWNLOAD_DIR}/${filename}"
     extract_tarball "${DOWNLOAD_DIR}/${filename}"
 }
 
@@ -254,7 +254,7 @@ download_libinput() {
 
 download_weston() {
     local filename="weston-${WESTON_VERSION}.tar.xz"
-    download_file "https://wayland.freedesktop.org/releases/${filename}" "${DOWNLOAD_DIR}/${filename}"
+    download_file "https://gitlab.freedesktop.org/wayland/weston/-/releases/${WESTON_VERSION}/downloads/${filename}" "${DOWNLOAD_DIR}/${filename}"
     extract_tarball "${DOWNLOAD_DIR}/${filename}"
 }
 
